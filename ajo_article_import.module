@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Module file for Feeds Fetcher Archive.
+ * TODO: Add plugins for more: parser and processor
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function ajo_article_import__ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_feeds_plugins().
+ */
+function ajo_article_import_feeds_plugins() {
+  $info = array();
+  $path = drupal_get_path('module', 'ajo_article_import') . '/plugins';
+  $info['FeedsArchiveFileFetcher'] = array(
+    'name' => 'Archive File Fetcher',
+    'description' => 'Import content from a local archive for AJO.',
+    'handler' => array(
+      'parent' => 'FeedsFileFetcher',
+      'class' => 'FeedsArchiveFileFetcher',
+      'file' => 'FeedsArchiveFileFetcher.inc',
+      'path' => $path,
+    ),
+  );
+    $info['FeedsAJOParser'] = array(
+    'name' => 'AJO parser',
+    'description' => 'Parse data in HTML format.',
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'FeedsAJOParser',
+      'file' => 'FeedsAJOParser.inc',
+      'path' => $path,
+    ),
+  );
+  //todo: maybe parent should be feedsnodeprocessor?
+  $info['FeedsAJOProcessor'] = array(
+    'name' => 'CSV parser',
+    'description' => 'Parse data in Comma Separated Value format.',
+    'handler' => array(
+      'parent' => 'FeedsProcessor',
+      'class' => 'FeedsAJOProcessor',
+      'file' => 'FeedsAJOProcessor.inc',
+      'path' => $path,
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_feeds_after_import().
+ */
+function ajo_article_import_feeds_after_import(FeedsSource $source) {
+  /** @var FeedsImporter $importer */
+  $importer = $source->importer();
+  if ($importer->fetcher instanceof FeedsArchiveFileFetcher) {
+    // Cleanup content of temporary extract folder.
+    //TODO: check if this is necessary
+    $state = $source->state(FEEDS_FETCH);
+    file_unmanaged_delete_recursive($state->tmp_folder);
+  }
+}
+
