@@ -56,17 +56,4 @@ function ajo_article_import_feeds_plugins() {
   return $info;
 }
 
-/**
- * Implements hook_feeds_after_import().
- */
-function ajo_article_import_feeds_after_import(FeedsSource $source) {
-  /** @var FeedsImporter $importer */
-  $importer = $source->importer();
-  if ($importer->fetcher instanceof FeedsArchiveFileFetcher) {
-    // Cleanup content of temporary extract folder.
-    //TODO: check if this is necessary
-    $state = $source->state(FEEDS_FETCH);
-    file_unmanaged_delete_recursive($state->tmp_folder);
-  }
-}
 

@@ -6,17 +6,6 @@ package = "AJO"
 dependencies[] = ctools
 dependencies[] = feeds
 
-----------------------
-;TODO- figure out whether we need to use features
-features[ctools][] = "feeds:feeds_importer_default:1"
-features[ctools][] = "feeds_tamper:feeds_tamper_default:2"
-
-features[feeds_importer][] = "ajo_article"
-features[feeds_importer][] = "ajo_article_page"
-features[feeds_tamper][] = "Add domain"
-
-features[node][] = "article"
-
 -----------------------------
 ;Requires declarations for files that contain class declarations
 files[] = plugins/FeedsArchiveFileFetcher.inc
@@ -24,5 +13,5 @@ files[] = plugins/FeedsAJOParser.inc
 files[] = plugins/FeedsAJOProcessor.inc
 
 ;TODO- other libraries
-files[] = libraries/ParserAJO.inc
+;files[] = libraries/ParserAJO.inc
 

@@ -6,15 +6,12 @@
  */
 
 class FeedsArchiveFileFetcherResult extends FeedsFileFetcherResult {
-//TODO: what variables should go here? things beyond what I have, like...an array of associated files
 /**
    * File list 
    *
    * @var array
    */
-  protected $folder_files;
-  //each file should be the file path, having been decoded?
-  //do we put raw content here?
+  public $folder_files;
 
 }
 
@@ -43,19 +40,22 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
       $state->files = $this->listFiles($state->tmp_folder);
       $state->total = count($state->files);
     }
-    if (count($state->files)) {
-    //THIS actually ends up running a bunch of times, once for each file
-
-      $file = array_shift($state->files);
-      $state->progress($state->total, $state->total - count($state->files));
-      return new FeedsArchiveFileFetcherResult($file);
-    }
 
     if ($state->total == 0) {
       $filename = pathinfo($source_config['source'], PATHINFO_FILENAME);
       $ext = pathinfo($source_config['source'], PATHINFO_EXTENSION);
       throw new Exception(t('@filename.@ext archive file does not contain any file.', array('@filename' => $filename, '@ext' => $ext)));
     }
+
+    $result = new FeedsFileFetcherResult($state->files);
+    
+    /*while ($state->files) {
+      $file = array_shift($state->files);
+      $state->progress($state->total, $state->total - count($state->files));
+     // $result->$folder_files[] = $file['path'];
+    }*/
+    return $result;
+    
   }
 
   /**
@@ -86,7 +86,7 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
     // Override allowed extensions.
     $config['allowed_extensions'] = archiver_get_extensions();
     // Additional configurations.
-    $config['extract_directory'] = 'temporary://feeds';
+    $config['extract_directory'] = 'public://articles';
     $config['filemask'] = '/\./';
     $config['recursive'] = TRUE;
     return $config;
