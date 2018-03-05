@@ -1,22 +1,6 @@
 <?php
 
 /**
- * @file
- * Contains FeedsArchiveFileFetcher and FeedsArchiveFileFetcherResult.
- */
-
-class FeedsArchiveFileFetcherResult extends FeedsFileFetcherResult {
-/**
-   * File list 
-   *
-   * @var array
-   */
-  public $folder_files;
-
-}
-
-
-/**
  * Fetcher files from archive files.
  */
 class FeedsArchiveFileFetcher extends FeedsFileFetcher {

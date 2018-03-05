@@ -5,9 +5,6 @@
  * Contains the FeedsAJOParser class.
  */
 
-/**
- * Parses a given file as a CSV file.
- */
 class FeedsAJOParser extends FeedsParser {
 
 	/**
@@ -16,8 +13,16 @@ class FeedsAJOParser extends FeedsParser {
 
 	public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
 		$result = new FeedsParserResult();
-		$files = $fetcher_result['file_path'];	
-		var_dump($files);
+		
+		$source_config = $source->getConfigFor($this);
+		$state = $source->state(FEEDS_PARSE);
+
+
+		/*$files = $fetcher_result->getFilePath();	
+		var_dump($result);
+		die;
+		//return $files;
+		
 		//foreach file, get the extension
 		foreach ($files as $file) {
 			$item = array();
@@ -34,7 +39,7 @@ class FeedsAJOParser extends FeedsParser {
 
 
 
-*/
+
 
 				break;
 				case "xls":
@@ -60,7 +65,7 @@ class FeedsAJOParser extends FeedsParser {
 
 
 			
-		}
+		}*/
 
 		return $result;
 	}
@@ -73,20 +78,16 @@ class FeedsAJOParser extends FeedsParser {
 		return FALSE;
 	}
 
-	/**
-	 * Define defaults.
-	 */
-	public function sourceDefaults() {
-		return false;
-	}
+
 
 	/**
 	 * Define default configuration.
-	 * n.b. 
+	 * n.b. todo: removing this really messes things up
 	 */
 	public function configDefaults() {
-		return false;
+		$config = parent::configDefaults();
 	}
 
+	//todo: there may be something missing here?
 }
 	

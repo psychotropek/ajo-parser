@@ -44,8 +44,8 @@ function ajo_article_import_feeds_plugins() {
   );
   //todo: maybe parent should be feedsnodeprocessor?
   $info['FeedsAJOProcessor'] = array(
-    'name' => 'CSV parser',
-    'description' => 'Parse data in Comma Separated Value format.',
+    'name' => 'AJO Processor',
+    'description' => 'Process stuff in a node.',
     'handler' => array(
       'parent' => 'FeedsProcessor',
       'class' => 'FeedsAJOProcessor',
