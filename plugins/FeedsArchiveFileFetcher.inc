@@ -1,4 +1,16 @@
 <?php
+class FeedsArchiveFileFetcherResult extends FeedsFileFetcherResult {
+
+  public $file_list;
+  /**
+   * Overrides parent::getFilePath().
+   */
+  public function getFilePath() {
+    return $this->file_path;
+  }
+}
+
+
 
 /**
  * Fetcher files from archive files.
@@ -22,6 +34,7 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
       //todo: extract to public folder instead, then don't delete
       $archiver->extract($state->tmp_folder);
       $state->files = $this->listFiles($state->tmp_folder);
+
       $state->total = count($state->files);
     }
 
@@ -32,12 +45,8 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
     }
 
     $result = new FeedsFileFetcherResult($state->files);
-    
-    /*while ($state->files) {
-      $file = array_shift($state->files);
-      $state->progress($state->total, $state->total - count($state->files));
-     // $result->$folder_files[] = $file['path'];
-    }*/
+    $result->file_list = $state->files;
+
     return $result;
     
   }

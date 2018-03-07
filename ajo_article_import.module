@@ -9,12 +9,12 @@
 /**
  * Implements hook_ctools_plugin_api().
  */
-function ajo_article_import__ctools_plugin_api($owner, $api) {
+/*function ajo_article_import__ctools_plugin_api($owner, $api) {
   if ($owner == 'feeds' && $api == 'plugins') {
     return array('version' => 1);
   }
   return NULL;
-}
+}*/
 
 /**
  * Implements hook_feeds_plugins().
@@ -42,8 +42,7 @@ function ajo_article_import_feeds_plugins() {
       'path' => $path,
     ),
   );
-  //todo: maybe parent should be feedsnodeprocessor?
-  $info['FeedsAJOProcessor'] = array(
+  /*$info['FeedsAJOProcessor'] = array(
     'name' => 'AJO Processor',
     'description' => 'Process stuff in a node.',
     'handler' => array(
@@ -52,7 +51,7 @@ function ajo_article_import_feeds_plugins() {
       'file' => 'FeedsAJOProcessor.inc',
       'path' => $path,
     ),
-  );
+  );*/
   return $info;
 }
 

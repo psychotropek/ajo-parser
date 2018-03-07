@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install/enable/update hooks for ajo_article_import.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function ajo_article_import_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
