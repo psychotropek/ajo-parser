@@ -12,6 +12,9 @@ class FeedsAJOParser extends FeedsParser {
 	*/
 
 	public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
+
+		require DRUPAL_ROOT.'/sites/all/vendor/autoload.php';
+
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
 
@@ -28,7 +31,43 @@ class FeedsAJOParser extends FeedsParser {
 				case "doc":
 				case "docx":
 					//$item['html'] = getRaw, then...parse?
+					try {
+						$client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
+						// please enter Word Cleaner Online login email and password below
+						$res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
+						$statusCode = $res->getStatusCode();
+						if ( $statusCode != 200 )
+						{
+							echo 'Invalid request status code: ' . $statusCode;
+							die();
+						}
+						$body = (string)$res->getBody();
+						$data = json_decode($body);
+						//echo 'Token: ' . $data->access_token;
+						$token = $data->access_token;
+						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
+						$formData = array();
+//todo: read doc
+                        $formData[] = [ 'name' => 'template', 'contents' => file_get_contents($file)];
+//todo: understand
+                        $formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
+//todo: understand
+                        $formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
+                    //todo: understand
+                        //$formData[] = [ 'name' => 'backUrl', 'contents' => $_POST['backUrl']];
+
+
+						$response = $client->request('POST', '/api/converter/convertdoc', [
+							'headers' => [ 'Authorization' => 'Bearer ' . $token ],
+							'multipart' => $formData,
+						]);
+                    	//echo $response->getStatusCode();
+						echo $response->getBody();
+					}
+					catch (Exception $exc) {
+						echo $exc->getMessage();
+					}
 
 				break;
 				case "xls":
@@ -44,7 +83,7 @@ class FeedsAJOParser extends FeedsParser {
 					//small image or large image, handle
 					//otherwise for image files, get some metadata (exif? or do we need to get raw?) for caption
 					$item['caption'] = exif_read_data($file, 'exif');
-var_dump($item['caption']);
+					//todo: ask Chris what exif data it will be kept in- send a sample image
 				break;
 					//todo: otherwise, move on?	
 
