@@ -31,9 +31,10 @@ class FeedsAJOParser extends FeedsParser {
 				case "doc":
 				case "docx":
 					//$item['html'] = getRaw, then...parse?
+
+//todo: try if
 					try {
 						$client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
-						// please enter Word Cleaner Online login email and password below
 						$res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
 						$statusCode = $res->getStatusCode();
 						if ( $statusCode != 200 )
@@ -48,22 +49,22 @@ class FeedsAJOParser extends FeedsParser {
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
 						$formData = array();
-//todo: read doc
-                        $formData[] = [ 'name' => 'template', 'contents' => file_get_contents($file)];
-//todo: understand
-                        $formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
-//todo: understand
-                        $formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
-                    //todo: understand
-                        //$formData[] = [ 'name' => 'backUrl', 'contents' => $_POST['backUrl']];
+						//$formData[] = [ 'name' => 'file_name', 'contents' => file_get_contents($file)];
+						//Original command. Trying something else?
+						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
+						
+						$formData[] = [ 'name' => 'template', 'contents' => 'AJO test template'];
+						$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
+						$formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
 
-
+						
 						$response = $client->request('POST', '/api/converter/convertdoc', [
 							'headers' => [ 'Authorization' => 'Bearer ' . $token ],
 							'multipart' => $formData,
 						]);
-                    	//echo $response->getStatusCode();
-						echo $response->getBody();
+                    	
+						$htmldoc = $response->getBody();
+						
 					}
 					catch (Exception $exc) {
 						echo $exc->getMessage();
