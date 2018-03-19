@@ -27,7 +27,6 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
     if (!isset($state->tmp_folder)) {
       $state->tmp_folder = $this->createTemporaryExtractFolderForFile($source_config['source']);
     }
-
     if (!isset($state->files)) {
       // Throws an exception if archive is not valid.
       $archiver = archiver_get_archiver($source_config['source']);
@@ -79,7 +78,7 @@ class FeedsArchiveFileFetcher extends FeedsFileFetcher {
     // Override allowed extensions.
     $config['allowed_extensions'] = archiver_get_extensions();
     // Additional configurations.
-    $config['extract_directory'] = 'public://articles';
+    $config['extract_directory'] = 'public://feeds';
     $config['filemask'] = '/\./';
     $config['recursive'] = TRUE;
     return $config;
