@@ -18,6 +18,7 @@ class FeedsAJOParser extends FeedsParser {
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
 	//use module name, then folder. may already be built-in.
+	//todo: echo?
 	//array(2) { [0]=> string(57) "public://feeds/ajo_test_2/testzip_9/amp_um_flower.jpeg" 
 	//[1]=> string(63) "public://feeds/ajo_test_2/testzip_9/book reviews part 2.docx" }
 
@@ -42,13 +43,10 @@ class FeedsAJOParser extends FeedsParser {
 						}
 						$body = (string)$res->getBody();
 						$data = json_decode($body);
-						//echo 'Token: ' . $data->access_token;
 						$token = $data->access_token;
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
 						$formData = array();
-						//$formData[] = [ 'name' => 'file_name', 'contents' => file_get_contents($file)];
-						//Original command. Trying something else?
 						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
 						$formData[] = [ 'name' => 'template', 'contents' => 'AJO test template'];
 						$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
@@ -105,26 +103,34 @@ class FeedsAJOParser extends FeedsParser {
 				case "xslx":
 					//get suffix of file for number (figure1, figure2, etc)
 					//for excel files, getRaw, then call the API. Pass the html into an array. 
+					//todo: stringfind, get everything starting figure, and then continue via substring
+					$figure = '';
+					$item['field'] = '';
 				break;
 				case "png":
 				case "jpg":
 				case "jpeg":
-					//todo: file is just a string.
 					//get suffix of file for number, same as xls (figure1, figure2, figure3, small image, large image, etc)
-					//small image or large image, handle
-					//otherwise for image files, get some metadata (exif? or do we need to get raw?) for caption
-					$item['caption'] = exif_read_data($file, 'exif');
-					$item['field'] = "image";
-					//todo: ask Chris what exif data it will be kept in- send a sample image
-				break;
-					//todo: otherwise, move on?	
 
-				
+					$item['path'] = $file;
+					//small image or large image, handle as just item path
+					//todo: implement
+					$item['field'] = '';
+					//todo: stringfind, get everything starting figure, and then continue via substring
+					//otherwise for image files, get some metadata (exif? or do we need to get raw?) for caption
+					$figure = '';
+					$item['caption'] = exif_read_data($file, 'exif');
+					//todo: find how figures are ordered in the content
+					$item['number'] = '';
+
+
+					$item[$figure] = "image";
+					//todo: ask Chris what exif data it will be kept in- send a sample image
+
+					//todo: in some cases this will go to the side for figures
+				break;
 			}
 			$result->items[] = $item;
-			//return var_dump($item);
-			
-			
 		}
 
 		return $result;
