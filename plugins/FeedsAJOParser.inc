@@ -58,12 +58,43 @@ class FeedsAJOParser extends FeedsParser {
 							'headers' => [ 'Authorization' => 'Bearer ' . $token ],
 							'multipart' => $formData,
 						]);
-						
                     	
 						$test = $response->getBody();
-						$html = (string)$test;
-						$item['field'] = 'content';
-						$item['body'] = $html;
+						$handle = (string)$test;
+						$handle = preg_replace("%\t%","",$handle);
+						$handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
+
+						preg_match_all("%<h1>(.*)</h1>%",$handle,$title,PREG_PATTERN_ORDER);
+						$item['title'] = $title;
+
+						preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
+						$items['authors'] = $authors_match;
+
+						preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
+						$item['summary'] = $summary_match;
+
+						preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
+						$item['teaser'] = $teaser_match;
+
+						preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
+						$item['take_home_points'] = $points_match;						
+
+						preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
+						$item['body'] = $body_match;
+						
+						//TODO: handle References, Topics, Authors, and Sections as lists. here or processor?
+						preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
+						$item['references'] = $ref_match;
+
+						preg_match_all("%<h6>\s*Topics\s*</h6>(((?!<h)(.|\n))*)%",$handle,$topics_match,PREG_PATTERN_ORDER);
+						$item['topics'] = $topics_match;
+
+						preg_match_all("%<h6>\s*Sections\s*</h6>(((?!<h)(.|\n))*)%",$handle,$sections_match,PREG_PATTERN_ORDER);
+						$item['sections'] = $sections_match;
+
+						preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
+						$item['digital_object_id'] = $doi_match;
+
 					}
 					catch (Exception $exc) {
 						echo $exc->getMessage();
