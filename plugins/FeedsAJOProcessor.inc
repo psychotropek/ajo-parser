@@ -16,21 +16,13 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
   public function process(FeedsSource $source, FeedsParserResult $parser_result) {
     
     //TODO: create? check parent
-    
-    
+
     
     // We need one item, no need for while loop.
+    //todo: while parser result has more?
     $item = $parser_result->shiftItem();
-
-    // We know node exists because it is the source of this import.
-    $nid = $source->feed_nid;
-    $skip_existing = $this->config['update_existing'] == FEEDS_SKIP_EXISTING;
-
-    // If we are not updating, bail.
-    if ($skip_existing) {
-      return;
-    }
-
+    var_dump($item);
+    //todo: what is this?
     $hash = $this->hash($item);
 
     // Do not proceed if the item has not changed, and we're not forcing
@@ -51,25 +43,13 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
       $this->map($source, $parser_result, $node);
       $this->entityValidate($node);
 
-      // Allow modules to alter the entity before saving.
-      module_invoke_all('feeds_presave', $source, $node, $item);
-      if (module_exists('rules')) {
-        rules_invoke_event('feeds_import_' . $source->importer()->id, $node);
-      }
-
-      // Enable modules to skip saving at all.
-      if (!empty($node->feeds_item->skip)) {
-        return;
-      }
 
       // This will throw an exception on failure.
       $this->entitySaveAccess($node);
 
-      // Remove Feeds tracking of this node.
-      unset($node->feeds_item);
-
       $this->entitySave($node);
 
+      //todo: just deal with new nodes
       $this->updateAJOItemInfo($node, $hash);
 
       // Set message.
@@ -86,6 +66,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
 
   /**
    * Updates {feeds_AJO_processor_item}.
+   * TODO: we don't have a title for this, even
    *
    * @param object $node
    *   The node being updated.
@@ -182,7 +163,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     }
 
     //todo: make sure node type is an article?
-//$type = node_get_types('type',   $this->config['content_type']);
+  //$type = node_get_types('type',   $this->config['content_type']);
 
     // Remove useless mappings.
     $mappings = parent::getMappingTargets();

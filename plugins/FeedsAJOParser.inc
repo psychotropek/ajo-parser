@@ -17,22 +17,20 @@ class FeedsAJOParser extends FeedsParser {
 
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
-
-//array(2) { [0]=> string(57) "public://articles/ajo_test_2/testzip_9/amp_um_flower.jpeg" 
-	//[1]=> string(63) "public://articles/ajo_test_2/testzip_9/book reviews part 2.docx" }
+	//use module name, then folder. may already be built-in.
+	//array(2) { [0]=> string(57) "public://feeds/ajo_test_2/testzip_9/amp_um_flower.jpeg" 
+	//[1]=> string(63) "public://feeds/ajo_test_2/testzip_9/book reviews part 2.docx" }
 
 		//foreach file, get the extension
 		foreach ($files as $file) {
 			$item = array();
-			//one item should contain an array with the filename, the 
+
 			$path_parts = pathinfo($file); //check for result
 			$file_type = $path_parts['extension'];
+			
 			switch($file_type) {
 				case "doc":
 				case "docx":
-					//$item['html'] = getRaw, then...parse?
-
-//todo: try if
 					try {
 						$client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
 						$res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
@@ -52,19 +50,20 @@ class FeedsAJOParser extends FeedsParser {
 						//$formData[] = [ 'name' => 'file_name', 'contents' => file_get_contents($file)];
 						//Original command. Trying something else?
 						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
-						
 						$formData[] = [ 'name' => 'template', 'contents' => 'AJO test template'];
 						$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
 						$formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
-
 						
 						$response = $client->request('POST', '/api/converter/convertdoc', [
 							'headers' => [ 'Authorization' => 'Bearer ' . $token ],
 							'multipart' => $formData,
 						]);
-                    	
-						$htmldoc = $response->getBody();
 						
+                    	
+						$test = $response->getBody();
+						$html = (string)$test;
+						$item['field'] = 'content';
+						$item['body'] = $html;
 					}
 					catch (Exception $exc) {
 						echo $exc->getMessage();
@@ -84,14 +83,16 @@ class FeedsAJOParser extends FeedsParser {
 					//small image or large image, handle
 					//otherwise for image files, get some metadata (exif? or do we need to get raw?) for caption
 					$item['caption'] = exif_read_data($file, 'exif');
+					$item['field'] = "image";
 					//todo: ask Chris what exif data it will be kept in- send a sample image
 				break;
 					//todo: otherwise, move on?	
 
-				$result->items[] = $item;
+				
 			}
-
-
+			$result->items[] = $item;
+			//return var_dump($item);
+			
 			
 		}
 

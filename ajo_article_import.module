@@ -42,7 +42,7 @@ function ajo_article_import_feeds_plugins() {
       'path' => $path,
     ),
   );
-  /*$info['FeedsAJOProcessor'] = array(
+  $info['FeedsAJOProcessor'] = array(
     'name' => 'AJO Processor',
     'description' => 'Process stuff in a node.',
     'handler' => array(
@@ -51,7 +51,7 @@ function ajo_article_import_feeds_plugins() {
       'file' => 'FeedsAJOProcessor.inc',
       'path' => $path,
     ),
-  );*/
+  );
   return $info;
 }
 
