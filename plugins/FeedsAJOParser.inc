@@ -135,7 +135,6 @@ class FeedsAJOParser extends FeedsParser {
 					//todo: find how figures are ordered in the content
 					$item['number'] = '';
 
-
 					$item[$figure] = "image";
 					//todo: ask Chris what exif data it will be kept in- send a sample image
 
