@@ -110,15 +110,27 @@ class FeedsAJOParser extends FeedsParser {
 				case "png":
 				case "jpg":
 				case "jpeg":
+					if ($path_parts['filename'] == 'medium_image' || $path_parts['filename'] == 'big_image') {
+						$item[$path_parts['filename']]['file'] = 0;
+						$item[$path_parts['filename']]['caption'] = 0;
+					}
+					else {
+						//$path_parts['filename'] == ? figure 1 etc
+					}
 					//get suffix of file for number, same as xls (figure1, figure2, figure3, small image, large image, etc)
-
+					$figure_array = new Array();
+					$figure_array['name'] = 'f2';
 					$item['path'] = $file;
+
+
+					$item['figures'][$figure] =  
+					
 					//small image or large image, handle as just item path
 					//todo: implement
 					$item['field'] = '';
 					//todo: stringfind, get everything starting figure, and then continue via substring
 					//otherwise for image files, get some metadata (exif? or do we need to get raw?) for caption
-					$figure = '';
+					
 					$item['caption'] = exif_read_data($file, 'exif');
 					//todo: find how figures are ordered in the content
 					$item['number'] = '';
