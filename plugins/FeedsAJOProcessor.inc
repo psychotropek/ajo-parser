@@ -15,24 +15,11 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
    */
   public function process(FeedsSource $source, FeedsParserResult $parser_result) {
     
-    //TODO: create? check parent
-
-    
-    // We need one item, no need for while loop.
     //todo: while parser result has more?
     $item = $parser_result->shiftItem();
     var_dump($item);
-    //todo: what is this?
+    
     $hash = $this->hash($item);
-
-    // Do not proceed if the item has not changed, and we're not forcing
-    // the update.
-    if ($hash === $this->getHash($nid) && !$this->config['skip_hash_check']) {
-      // The node has already been loaded, so this is free.
-      $node = node_load($nid);
-      drupal_set_message(t('%title has not changed.', array('%title' => $node->title)));
-      return;
-    }
 
     try {
       // Load entity.
@@ -41,6 +28,9 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
 
       // Set property and field values.
       $this->map($source, $parser_result, $node);
+
+
+      
       $this->entityValidate($node);
 
 
@@ -67,7 +57,8 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
   /**
    * Updates {feeds_AJO_processor_item}.
    * TODO: we don't have a title for this, even
-   *
+   * TODO: may be unnecessary
+   * 
    * @param object $node
    *   The node being updated.
    * @param string $hash
@@ -91,90 +82,72 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
 
   /**
    * Overrides parent::getHash().
+   * TODO: check table name
    */
   protected function getHash($nid) {
     return (string) db_query("SELECT hash FROM {feeds_AJO_processor_item} WHERE feed_nid = :nid", array(':nid' => $nid))->fetchField();
   }
 
   /**
-   * Overrides parent::hasConfigForm().
-   */
-  public function hasConfigForm() {
-    return TRUE;
-  }
-
-  /**
-   * Overrides parent::configDefaults().
-   */
-  public function configDefaults() {
-    $defaults = parent::configDefaults();
-    $defaults['update_existing'] = FEEDS_UPDATE_EXISTING;
-    $defaults['expire'] = FEEDS_EXPIRE_NEVER;
-    $defaults['import_on_create'] = FALSE;
-    return $defaults;
-  }
-
-  /**
-   * Overrides parent::getConfig().
-   */
-  public function getConfig() {
-    $config = parent::getConfig();
-    // Backwards compatible with older feeds versions.
-    $config['content_type'] = $this->bundle();
-    return $config;
-  }
-
-  /**
-   * Overrides parent::configForm().
-   */
-  public function configForm(&$form_state) {
-    $form = parent::configForm($form_state);
-    $form['update_non_existent']['#access'] = FALSE;
-    $form['content_type']['#access'] = FALSE;
-    $form['bundle']['#access'] = FALSE;
-
-    $form['import_on_create'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Import on create'),
-      '#description' => t('Check if import should be started as soon as the node is created.'),
-      '#default_value' => $this->config['import_on_create'],
-    );
-
-    if (!$this->bundle()) {
-      drupal_set_message(t('This importer must be attached to a <a href="@link">content type</a> for the Self Node Processor to work.', array('@link' => url('admin/structure/feeds/' . $this->id . '/settings'))), 'error', FALSE);
-    }
-    return $form;
-  }
-
-  /**
-   * Overrides parent::bundle().
-   */
-  public function bundle() {
-    return feeds_importer($this->id)->config['content_type'];
-  }
-
-  /**
    * Overrides parent::getMappingTargets().
    * TODO: add more mapping targets with the other fields
    */
+ /**
+   * Return available mapping targets.
+   */
   public function getMappingTargets() {
-    if (!$this->bundle()) {
-      return array('' => array());
+    $type = node_type_get_type($this->bundle());
+
+    $targets = parent::getMappingTargets();
+    if ($type && $type->has_title) {
+      $targets['title'] = array(
+        'name' => t('Title'),
+        'description' => t('The title of the node.'),
+        'optional_unique' => TRUE,
+      );
     }
+    $targets['nid'] = array(
+      'name' => t('Node ID'),
+      'description' => t('The nid of the node. NOTE: use this feature with care, node ids are usually assigned by Drupal.'),
+      'optional_unique' => TRUE,
+    );
+    $targets['uid'] = array(
+      'name' => t('User ID'),
+      'description' => t('The Drupal user ID of the node author.'),
+    );
+    $targets['user_name'] = array(
+      'name' => t('Username'),
+      'description' => t('The Drupal username of the node author.'),
+    );
+    $targets['user_mail'] = array(
+      'name' => t('User email'),
+      'description' => t('The email address of the node author.'),
+    );
+    $targets['status'] = array(
+      'name' => t('Published status'),
+      'description' => t('Whether a node is published or not. 1 stands for published, 0 for not published.'),
+    );
+    $targets['created'] = array(
+      'name' => t('Published date'),
+      'description' => t('The UNIX time when a node has been published.'),
+    );
+    $targets['changed'] = array(
+      'name' => t('Updated date'),
+      'description' => t('The Unix timestamp when a node has been last updated.'),
+    );
+    $targets['promote'] = array(
+      'name' => t('Promoted to front page'),
+      'description' => t('Boolean value, whether or not node is promoted to front page. (1 = promoted, 0 = not promoted)'),
+    );
+    $targets['sticky'] = array(
+      'name' => t('Sticky'),
+      'description' => t('Boolean value, whether or not node is sticky at top of lists. (1 = sticky, 0 = not sticky)'),
+    );
 
-    //todo: make sure node type is an article?
-  //$type = node_get_types('type',   $this->config['content_type']);
+    $this->getHookTargets($targets);
 
-    // Remove useless mappings.
-    $mappings = parent::getMappingTargets();
-    unset($mappings['url'], $mappings['guid'], $mappings['nid']);
-
-    // No need for any uniqueness.
-    foreach ($mappings as $key => $mapping) {
-      unset($mappings[$key]['optional_unique']);
-    }
-
-    return $mappings;
+    return $targets;
   }
+
 
 }
