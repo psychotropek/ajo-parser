@@ -17,17 +17,18 @@ class FeedsAJOParser extends FeedsParser {
 
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
-	//use module name, then folder. may already be built-in.
-	//todo: echo?
+
 	//array(2) { [0]=> string(57) "public://feeds/ajo_test_2/testzip_9/amp_um_flower.jpeg" 
 	//[1]=> string(63) "public://feeds/ajo_test_2/testzip_9/book reviews part 2.docx" }
 
-		//foreach file, get the extension
 		foreach ($files as $file) {
 			$item = array();
 
-			$path_parts = pathinfo($file); //check for result
+			$path_parts = pathinfo($file);
 			$file_type = $path_parts['extension'];
+
+			$table_match = preg_match('/(table)|(Table)/',$path_parts['filename']);
+			$figure_match = preg_match('/(figure)|(Figure)/',$path_parts['filename']);
 			
 			switch($file_type) {
 				case "doc":
@@ -46,80 +47,16 @@ class FeedsAJOParser extends FeedsParser {
 						$token = $data->access_token;
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
-						$formData = array();
-						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
-						$formData[] = [ 'name' => 'template', 'contents' => 'AJO test template'];
-						$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
-						$formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
-						
-						$response = $client->request('POST', '/api/converter/convertdoc', [
-							'headers' => [ 'Authorization' => 'Bearer ' . $token ],
-							'multipart' => $formData,
-						]);
-                    	
-						$test = $response->getBody();
-						$handle = (string)$test;
-						$handle = preg_replace("%\t%","",$handle);
-						$handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
-
-						preg_match_all("%<h1>(.*)</h1>%",$handle,$title,PREG_PATTERN_ORDER);
-						$item['title'] = $title;
-
-						preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
-						$items['authors'] = $authors_match;
-
-						preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
-						$item['summary'] = $summary_match;
-
-						preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
-						$item['teaser'] = $teaser_match;
-
-						preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
-						$item['take_home_points'] = $points_match;						
-
-						preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
-						$item['body'] = $body_match;
-						
-						//TODO: handle References, Topics, Authors, and Sections as lists. here or processor?
-						preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
-						$item['references'] = $ref_match;
-
-						preg_match_all("%<h6>\s*Topics\s*</h6>(((?!<h)(.|\n))*)%",$handle,$topics_match,PREG_PATTERN_ORDER);
-						$item['topics'] = $topics_match;
-
-						preg_match_all("%<h6>\s*Sections\s*</h6>(((?!<h)(.|\n))*)%",$handle,$sections_match,PREG_PATTERN_ORDER);
-						$item['sections'] = $sections_match;
-
-						preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
-						$item['digital_object_id'] = $doi_match;
-
-					}
-					catch (Exception $exc) {
-						echo $exc->getMessage();
-					}
-
-				break;
-				case "xls":
-				case "xslx":
-					//todo: get index from filename
-					$table_index = 1;
-					try {
-						$client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
-						$res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
-						$statusCode = $res->getStatusCode();
-						if ( $statusCode != 200 )
+						//todo: set template according to path_parts substr. if contains table...change template
+						$docconverterTemplate = "AJO test template";
+						//todo: case insensitive? also find path parts
+						if ($table_match > 0) 
 						{
-							echo 'Invalid request status code: ' . $statusCode;
-							die();
+							$docconverterTemplate = "AJO table template";
 						}
-						$body = (string)$res->getBody();
-						$data = json_decode($body);
-						$token = $data->access_token;
-						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
-		//todo: excel template? test
 						$formData = array();
 						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
-						$formData[] = [ 'name' => 'template', 'contents' => 'AJO test template'];
+						$formData[] = [ 'name' => 'template', 'contents' => $docconverterTemplate];
 						$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
 						$formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
 						
@@ -130,14 +67,63 @@ class FeedsAJOParser extends FeedsParser {
                     	
 						$test = $response->getBody();
 						$handle = (string)$test;
-						$table_array = array();
-						//todo: there will be a heading, but it'll be at the top
-						//todo: figure out caption and put it in that field
-						$item['tables'][$table_index] = $table_array;
+
+//todo: here break things out according to path_parts substr. If contains table, slurp it. 
+//every text before it begins will have a different div...above_table, and everything below it will have table_caption class
+//else...
+
+						if ($table_match > 0) 
+						{
+							$table_array = array();
+							$table_array['above_table'] = "";
+							$table_array['table_data'] = "";
+							$table_array['table_caption'] == "";
+							//todo: check parentheses with John
+							preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
+							$item['tables'][$table_index] = $table_array;
+						}
+						else
+						{
+							$handle = preg_replace("%\t%","",$handle);
+							$handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
+
+							preg_match_all("%<h1>(.*)</h1>%",$handle,$title,PREG_PATTERN_ORDER);
+							$item['title'] = $title;
+
+							preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
+							$items['authors'] = $authors_match;
+
+							preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
+							$item['summary'] = $summary_match;
+
+							preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
+							$item['teaser'] = $teaser_match;
+
+							preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
+							$item['take_home_points'] = $points_match;						
+
+							preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
+							$item['body'] = $body_match;
+							
+							//TODO: handle References, Topics, Authors, and Sections as lists. here or processor?
+							preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
+							$item['references'] = $ref_match;
+
+							preg_match_all("%<h6>\s*Topics\s*</h6>(((?!<h)(.|\n))*)%",$handle,$topics_match,PREG_PATTERN_ORDER);
+							$item['topics'] = $topics_match;
+
+							preg_match_all("%<h6>\s*Sections\s*</h6>(((?!<h)(.|\n))*)%",$handle,$sections_match,PREG_PATTERN_ORDER);
+							$item['sections'] = $sections_match;
+
+							preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
+							$item['digital_object_id'] = $doi_match;
+						}
+
 					}
 					catch (Exception $exc) {
 						echo $exc->getMessage();
 					}
+
 				break;
 				case "png":
 				case "jpg":
@@ -148,16 +134,19 @@ class FeedsAJOParser extends FeedsParser {
 						$image_xml = exif_custom_get_xmp($image_path);
 						$item[$path_parts['filename']]['caption'] = $image_xml['XMP:xmpmeta:rdf:description:description:alt:li'];
 					}
-					else {
+					else if ($figure_match > 0) 
+					{
 						$figure_array = array();
-						//todo: figure index? get last numerical digits of filename?
-						$figure_index = 1;
+						preg_match_all("%(figure)|(Figure)(.*)_%",$path_parts['filename'],$figure_index,PREG_PATTERN_ORDER);
 						$image_path = drupal_get_path('module', 'ajo_test').$path_parts['filename'];
 						$figure_array['filepath'] = $image_path;
 						$image_xml = exif_custom_get_xmp($image_path);
 						$figure_array['caption'] = $image_xml['XMP:xmpmeta:rdf:description:description:alt:li'];
 
 						$item['figures'][$figure_index] = $figure_array; 
+
+					}
+					else {
 
 					}
 
