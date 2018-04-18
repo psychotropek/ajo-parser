@@ -17,13 +17,9 @@ class FeedsAJOParser extends FeedsParser {
 
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
-
-	//array(2) { [0]=> string(57) "public://feeds/ajo_test_2/testzip_9/amp_um_flower.jpeg" 
-	//[1]=> string(63) "public://feeds/ajo_test_2/testzip_9/book reviews part 2.docx" }
+		$item = array();
 
 		foreach ($files as $file) {
-			$item = array();
-
 			$path_parts = pathinfo($file);
 			$file_type = $path_parts['extension'];
 
@@ -47,9 +43,8 @@ class FeedsAJOParser extends FeedsParser {
 						$token = $data->access_token;
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
-						//todo: set template according to path_parts substr. if contains table...change template
+						//todo: set template according to path_parts substr. if contains table...change template But maybe the same template is fine?
 						$docconverterTemplate = "AJO test template";
-						//todo: case insensitive? also find path parts
 						if ($table_match > 0) 
 						{
 							$docconverterTemplate = "AJO table template";
@@ -91,7 +86,7 @@ class FeedsAJOParser extends FeedsParser {
 							$item['title'] = $title;
 
 							preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
-							$items['authors'] = $authors_match;
+							$item['authors'] = $authors_match;
 
 							preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
 							$item['summary'] = $summary_match;
@@ -105,7 +100,6 @@ class FeedsAJOParser extends FeedsParser {
 							preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
 							$item['body'] = $body_match;
 							
-							//TODO: handle References, Topics, Authors, and Sections as lists. here or processor?
 							preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
 							$item['references'] = $ref_match;
 
@@ -172,15 +166,11 @@ class FeedsAJOParser extends FeedsParser {
 		if ($xmp === FALSE) {
 		  return array();
 		}
-		// $namespaces = $xmp->getDocNamespaces(true);
-		// $fields = array();
-		// foreach ($namespaces as $namespace) {
-		// $fields[] = exif_custom_xml_recursion($xmp->children($namespace));
 		$field_data = array();
 		exif_custom_xml_recursion($xmp, $field_data, 'XMP');
 	   
 		return $field_data;
-	  }
+	}
 	  
 	  function exif_custom_xml_recursion($obj, array &$fields, $name) {
 		$namespace = $obj->getDocNamespaces(TRUE);
@@ -244,7 +234,7 @@ class FeedsAJOParser extends FeedsParser {
 		  'attributes' => $attributes,
 		  'children' => $children,
 		);
-	  }
+	}
 	
 
 }
