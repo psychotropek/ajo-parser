@@ -63,16 +63,17 @@ class FeedsAJOParser extends FeedsParser {
 						$test = $response->getBody();
 						$handle = (string)$test;
 
-//todo: here break things out according to path_parts substr. If contains table, slurp it. 
-//every text before it begins will have a different div...above_table, and everything below it will have table_caption class
-//else...
-
 						if ($table_match > 0) 
 						{
 							$table_array = array();
-							$table_array['above_table'] = "";
-							$table_array['table_data'] = "";
-							$table_array['table_caption'] == "";
+							//todo: regex of everything up to?
+							preg_match_all("%(.*)<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
+							$table_array['above_table'] = $above_table;
+							//todo: make sure you've got the inclusive stuff...
+							preg_match_all("%<table>\n(.*)\n</table>%",$handle,$table_data,PREG_PATTERN_ORDER);
+							$table_array['table_data'] = $table_data;
+							preg_match_all("%</table>\n(.*)>%",$handle,$table_caption,PREG_PATTERN_ORDER);
+							$table_array['table_caption'] == $table_caption;
 							//todo: check parentheses with John
 							preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
 							$item['tables'][$table_index] = $table_array;
@@ -141,7 +142,7 @@ class FeedsAJOParser extends FeedsParser {
 
 					}
 					else {
-
+						//I haven't the slightest idea as to how to handle this error. Waiting on zip file.
 					}
 
 				break;

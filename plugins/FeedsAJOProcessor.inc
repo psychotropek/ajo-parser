@@ -15,9 +15,10 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
    */
   public function process(FeedsSource $source, FeedsParserResult $parser_result) {
     
-    //todo: while parser result has more?
+    //todo: test, check how to get first
     $item = $parser_result->shiftItem();
 
+    //todo: check if articles should be published by default
     $values = array(
       'type' => 'article',
       'uid' => 1,
@@ -37,24 +38,24 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     //n.b.Legacy authors is a rich text that contains author disclosure
     $ewrapper->field_article_legacy_authors->set($item['author_disclosure']);
 
-    $file_efq = new EntityFieldQuery();
-    //todo: will need two filenames, will need to execute this for both medium and big image
-    $filename = "figure1.jpg";
-    $file_efq->entityCondition('entity_type', 'file')
-      ->propertyCondition('filename', $filename);
-    $file_efq_result = $file_efq->execute();
-    $fid = 0;
-    if (count($file_efq_result)) {
-      $fid = array_pop($file_efq_result['file'])->fid;
+    $image_type_array = array('medium_image', 'big_image');
+    foreach ($image_type_array as $image_type)
+    {
+      $file_efq = new EntityFieldQuery();
+      $filename = $item[$image_type]['filepath'];
+      $file_efq->entityCondition('entity_type', 'file')
+        ->propertyCondition('filename', $filename);
+      $file_efq_result = $file_efq->execute();
+      $fid = 0;
+      if (count($file_efq_result)) {
+        $fid = array_pop($file_efq_result['file'])->fid;
+      }
+      // Set both file and title separately. 
+      $image_obj = file_load($fid);
+      $ewrapper->field_article_medium_image->file = $image_obj;
+      $ewrapper->field_article_medium_image->title = $item[$image_type]['caption'];
     }
-    // Set both file and title separately. TODO: need actual file
-    $image_obj = file_load($fid);
-    $ewrapper->field_article_medium_image->file = $image_obj;
-    $ewrapper->field_article_medium_image->title = $title;
-  
-    //$ewrapper->field_article_medium_image->set();
-    //$ewrapper->field_article_big_image->set();
-    
+
     
     //Inside the article- all long text fields. Key Info = Take Home Points
     $ewrapper->field_article_key_info->set(array('value' => $item['take_home_points']));
@@ -64,7 +65,8 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $figures_tables = "";
     foreach ($item['figures'] as $figure)
     {
-      //todo: add html, filepath, caption
+      $figures_tables .= '<img class="media-element file-medstat-image-centered" data-delta="1" typeof="foaf:Image" src="'.$figure['filepath'].'" width="480" height="135" alt="" title="">';    
+      $figures_tables .= '<div class="figure-caption">'.$figure['$figure_caption'].'</div>';  
       //todo: the gallery link/code is inserted via colorbox module. But what invokes the module? Check theme if doesn't auto-format.
       //element has div media media-element-container media-medstat_image_centered
       //<a href="https://dev-ajo-test.pantheonsite.io/sites/default/files/norris0318_f1.jpg" 
@@ -72,12 +74,12 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
       //<img class="media-element file-medstat-image-centered" data-delta="1" typeof="foaf:Image" 
       //src="https://dev-ajo-test.pantheonsite.io/sites/default/files/styles/large/public/norris0318_f1.jpg?itok=25mKu7Br" 
       //width="480" height="135" alt="" title=""></a>
-      //figure 1 should be text right before caption, below image
+      //todo: figure 1 should be text right before caption, below image, unless they include it in text
 
     }
     foreach ($item['tables'] as $table)
     {
-      //todo: add html- will just be the table code?
+      $figures_tables .= "Table 1: ".$table['above_table']." ".$table['table_data']." ".$table['table_caption']; 
             //above_table should start with Table X. See if they put it in their document?
       //output $table[above_table], table_data, and table_caption
     }
