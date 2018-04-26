@@ -24,7 +24,7 @@ class FeedsAJOParser extends FeedsParser {
 			$file_type = $path_parts['extension'];
 
 			$table_match = preg_match('/(table)|(Table)/',$path_parts['filename']);
-			$figure_match = preg_match('/(figure)|(Figure)/',$path_parts['filename']);
+			$figure_match = preg_match('/(figure)|(Figure)|(_f)/',$path_parts['filename']);
 			
 			switch($file_type) {
 				case "doc":
@@ -43,7 +43,6 @@ class FeedsAJOParser extends FeedsParser {
 						$token = $data->access_token;
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
-						//todo: set template according to path_parts substr. if contains table...change template But maybe the same template is fine?
 						$docconverterTemplate = "AJO test template";
 						if ($table_match > 0) 
 						{
@@ -85,7 +84,7 @@ class FeedsAJOParser extends FeedsParser {
 
 							preg_match_all("%<h1>(.*)</h1>%",$handle,$title,PREG_PATTERN_ORDER);
 							$item['title'] = $title;
-
+							//todo: investigate if author has carriage returns after it, how that works etc?
 							preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
 							$item['authors'] = $authors_match;
 
@@ -98,7 +97,13 @@ class FeedsAJOParser extends FeedsParser {
 							preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
 							$item['take_home_points'] = $points_match;						
 
-							preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
+							//todo: note that the body needs to start somewhere, and ask John
+							//preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
+							preg_match_all("%*<h2>Body(\s|.)*</h2>
+							
+							((?!<h)(.|\n))*
+							<h2>\s*References\s*</h2>%",$handle,$body_match,PREG_PATTERN_ORDER);
+							
 							$item['body'] = $body_match;
 							
 							preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
@@ -112,6 +117,7 @@ class FeedsAJOParser extends FeedsParser {
 
 							preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
 							$item['digital_object_id'] = $doi_match;
+							
 						}
 
 					}
@@ -123,7 +129,7 @@ class FeedsAJOParser extends FeedsParser {
 				case "png":
 				case "jpg":
 				case "jpeg":
-					if ($path_parts['filename'] == 'medium_image' || $path_parts['filename'] == 'big_image') {
+					if ($path_parts['filename'] == 'medium_image' || $path_parts['filename'] == 'big_image' || $path_parts['filename'] == 'teaser_image') {
 						$image_path = drupal_get_path('module', 'ajo_test').$path_parts['filename'];
 						$item[$path_parts['filename']]['filepath'] = $image_path;
 						$image_xml = exif_custom_get_xmp($image_path);
@@ -142,7 +148,7 @@ class FeedsAJOParser extends FeedsParser {
 
 					}
 					else {
-						//I haven't the slightest idea as to how to handle this error. Waiting on zip file.
+						//I haven't the slightest idea as to how to handle this error. 
 					}
 
 				break;

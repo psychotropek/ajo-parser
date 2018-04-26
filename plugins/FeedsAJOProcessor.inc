@@ -18,12 +18,11 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     //todo: test, check how to get first
     $item = $parser_result->shiftItem();
 
-    //todo: check if articles should be published by default
     $values = array(
       'type' => 'article',
       'uid' => 1,
-      'status' => 1,
-      'comment' => 1,
+      'status' => 0,
+      'comment' => 0,
       'promote' => 0,
     );
     $entity = entity_create('node', $values);
@@ -38,7 +37,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     //n.b.Legacy authors is a rich text that contains author disclosure
     $ewrapper->field_article_legacy_authors->set($item['author_disclosure']);
 
-    $image_type_array = array('medium_image', 'big_image');
+    $image_type_array = array('medium_image', 'big_image', 'teaser_image');
     foreach ($image_type_array as $image_type)
     {
       $file_efq = new EntityFieldQuery();
