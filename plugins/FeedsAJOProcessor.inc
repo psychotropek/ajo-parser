@@ -45,22 +45,24 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
       $file_efq->entityCondition('entity_type', 'file')
         ->propertyCondition('filename', $filename);
       $file_efq_result = $file_efq->execute();
+      //todo: check for what if no file?
       $fid = 0;
       if (count($file_efq_result)) {
         $fid = array_pop($file_efq_result['file'])->fid;
       }
       // Set both file and title separately. 
       $image_obj = file_load($fid);
-      $ewrapper->field_article_medium_image->file = $image_obj;
-      $ewrapper->field_article_medium_image->title = $item[$image_type]['caption'];
+
+      //todo: test string concat
+      $fieldstring = "field_article_".$image_type;
+      $ewrapper->$fieldstring->file = $image_obj;
+      $ewrapper->$fieldstring->title = $item[$image_type]['caption'];
     }
 
     
     //Inside the article- all long text fields. Key Info = Take Home Points
     $ewrapper->field_article_key_info->set(array('value' => $item['take_home_points']));
     
-    //TODO: Figures and tables requires several fields. We're going to have to add something in the $items
-    //add figures first, then tables. We'll see how they 
     $figures_tables = "";
     foreach ($item['figures'] as $figure)
     {
@@ -76,11 +78,10 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
       //todo: figure 1 should be text right before caption, below image, unless they include it in text
 
     }
-    foreach ($item['tables'] as $table)
+    foreach ($item['tables'] as $key => $table)
     {
-      $figures_tables .= "Table 1: ".$table['above_table']." ".$table['table_data']." ".$table['table_caption']; 
-            //above_table should start with Table X. See if they put it in their document?
-      //output $table[above_table], table_data, and table_caption
+      $figures_tables .= $table['above_table']." ".$table['table_data']." ".$table['table_caption']; 
+      //"Table.".$key.":".      
     }
 
     $ewrapper->field_article_figures_tables->set(array('value' => $figures_tables));

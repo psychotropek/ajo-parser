@@ -65,15 +65,12 @@ class FeedsAJOParser extends FeedsParser {
 						if ($table_match > 0) 
 						{
 							$table_array = array();
-							//todo: regex of everything up to?
 							preg_match_all("%(.*)<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
 							$table_array['above_table'] = $above_table;
-							//todo: make sure you've got the inclusive stuff...
-							preg_match_all("%<table>\n(.*)\n</table>%",$handle,$table_data,PREG_PATTERN_ORDER);
+							preg_match_all("%(<table>\n(.*)\n</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
 							$table_array['table_data'] = $table_data;
 							preg_match_all("%</table>\n(.*)>%",$handle,$table_caption,PREG_PATTERN_ORDER);
 							$table_array['table_caption'] == $table_caption;
-							//todo: check parentheses with John
 							preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
 							$item['tables'][$table_index] = $table_array;
 						}
@@ -97,13 +94,8 @@ class FeedsAJOParser extends FeedsParser {
 							preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
 							$item['take_home_points'] = $points_match;						
 
-							//todo: note that the body needs to start somewhere, and ask John
 							//preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
-							preg_match_all("%*<h2>Body(\s|.)*</h2>
-							
-							((?!<h)(.|\n))*
-							<h2>\s*References\s*</h2>%",$handle,$body_match,PREG_PATTERN_ORDER);
-							
+							preg_match_all("%*<h2>Body(\s|.)*</h2>((.|\n))*<h2>\s*References\s*</h2>%",$handle,$body_match,PREG_PATTERN_ORDER);
 							$item['body'] = $body_match;
 							
 							preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
