@@ -15,7 +15,6 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
    */
   public function process(FeedsSource $source, FeedsParserResult $parser_result) {
     
-    //todo: test, check how to get first
     $item = $parser_result->shiftItem();
 
     $values = array(
@@ -41,12 +40,16 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     foreach ($image_type_array as $image_type)
     {
       $file_efq = new EntityFieldQuery();
-      $filename = $item[$image_type]['filepath'];
-      $file_efq->entityCondition('entity_type', 'file')
-        ->propertyCondition('filename', $filename);
+      $file_efq->entityCondition('entity_type', 'file')->propertyCondition('uri', $item['folder_path'].'/'.$image_type);
       $file_efq_result = $file_efq->execute();
-      //todo: check for what if no file?
+      //todo: if there's no fid, how do we skip over this?
+      //todo: need file extension. This will come from item(files list). First we need to search for which ones to implement, and what their extensions are
+      //key is image_type and value is extension
+      var_dump($item['folder_path'].'/'.$image_type);
+      die;
       $fid = 0;
+      var_dump($file_efq_result);
+      die;
       if (count($file_efq_result)) {
         $fid = array_pop($file_efq_result['file'])->fid;
       }
@@ -55,8 +58,10 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
 
       //todo: test string concat
       $fieldstring = "field_article_".$image_type;
+
       $ewrapper->$fieldstring->file = $image_obj;
       $ewrapper->$fieldstring->title = $item[$image_type]['caption'];
+
     }
 
     

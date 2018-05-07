@@ -18,6 +18,8 @@ class FeedsAJOParser extends FeedsParser {
 		$result = new FeedsParserResult();
 		$files=$fetcher_result->file_list;
 		$item = array();
+		$item['folder_path'] = pathinfo($files[0])['dirname'];
+		$item['files_list'] = $files;
 
 		foreach ($files as $file) {
 			$path_parts = pathinfo($file);
@@ -44,10 +46,6 @@ class FeedsAJOParser extends FeedsParser {
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
 						$docconverterTemplate = "AJO test template";
-						if ($table_match > 0) 
-						{
-							$docconverterTemplate = "AJO table template";
-						}
 						$formData = array();
 						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
 						$formData[] = [ 'name' => 'template', 'contents' => $docconverterTemplate];
@@ -62,54 +60,73 @@ class FeedsAJOParser extends FeedsParser {
 						$test = $response->getBody();
 						$handle = (string)$test;
 
+						$handle = preg_replace("%(\t|\r|\v|\f)%","",$handle);
+						$handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
+						$handle = preg_replace("%<p>(\s)*<strong>&#xa0;</strong>(\s)*</p>%","",$handle);
+						$handle = preg_replace("%<p>(\s)*<em>&#xa0;</em>(\s)*</p>%","",$handle);
+
 						if ($table_match > 0) 
 						{
 							$table_array = array();
-							preg_match_all("%(.*)<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
-							$table_array['above_table'] = $above_table;
-							preg_match_all("%(<table>\n(.*)\n</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
-							$table_array['table_data'] = $table_data;
-							preg_match_all("%</table>\n(.*)>%",$handle,$table_caption,PREG_PATTERN_ORDER);
-							$table_array['table_caption'] == $table_caption;
-							preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
-							$item['tables'][$table_index] = $table_array;
+							preg_match_all("%^(.|\n)*<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
+							$table_array['above_table'] = trim($above_table[0][0]);
+							preg_match_all("%(<table>((.|\n*)*)</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
+							$table_array['table_data'] = $table_data[0][0];
+							preg_match_all("%</table>(.|\n)*$%",$handle,$table_caption,PREG_PATTERN_ORDER);
+							$table_array['table_caption'] = trim($table_caption[0][0]);
+							$item['tables'][] = $table_array;
+							//todo: get index? it's not in table file name
+							//preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
+							//$item['tables'][$table_index] = $table_array;
 						}
 						else
 						{
-							$handle = preg_replace("%\t%","",$handle);
-							$handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
+							if ($item['title'] == "") {
+								preg_match_all("%<h1>\s*(.*)\s*</h1>%",$handle,$title,PREG_PATTERN_ORDER);
+								$item['title'] = trim($title[1][0]);
+							}
 
-							preg_match_all("%<h1>(.*)</h1>%",$handle,$title,PREG_PATTERN_ORDER);
-							$item['title'] = $title;
-							//todo: investigate if author has carriage returns after it, how that works etc?
-							preg_match_all("%<h6>.*Author.*</h6>\n(.*)\n%",$handle,$authors_match,PREG_PATTERN_ORDER);
-							$item['authors'] = $authors_match;
-
+							if ($item['authors'] == "") {
+								preg_match_all("%<h6>\s*Authors\s*</h6>\s*<p>\s*(.*)\s*</p>%",$handle,$authors_match,PREG_PATTERN_ORDER);
+								$item['authors'] = trim($authors_match[1][0]);
+							}
+						
+							//todo: don't have yet
 							preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
 							$item['summary'] = $summary_match;
-
+						
+							//todo: don't have yet
 							preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
 							$item['teaser'] = $teaser_match;
-
-							preg_match_all("%<h2>\s*Take-Home Points\s*</h2>(((?!<h)(.|\n))*)%",$handle,$points_match,PREG_PATTERN_ORDER);
-							$item['take_home_points'] = $points_match;						
-
-							//preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
-							preg_match_all("%*<h2>Body(\s|.)*</h2>((.|\n))*<h2>\s*References\s*</h2>%",$handle,$body_match,PREG_PATTERN_ORDER);
-							$item['body'] = $body_match;
-							
-							preg_match_all("%<h2>\s*References\s*</h2>(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
-							$item['references'] = $ref_match;
-
-							preg_match_all("%<h6>\s*Topics\s*</h6>(((?!<h)(.|\n))*)%",$handle,$topics_match,PREG_PATTERN_ORDER);
-							$item['topics'] = $topics_match;
-
-							preg_match_all("%<h6>\s*Sections\s*</h6>(((?!<h)(.|\n))*)%",$handle,$sections_match,PREG_PATTERN_ORDER);
-							$item['sections'] = $sections_match;
-
-							preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
-							$item['digital_object_id'] = $doi_match;
-							
+						
+							if ($item['take_home_points'] == "") {
+								preg_match_all("%<h2>\s*Take-Home Points\s*</h2>\s*(((?!<h)(.|\n))*)\s*%",$handle,$points_match,PREG_PATTERN_ORDER);
+								$item['take_home_points'] = trim($points_match[1][0]);
+							}
+							if ($item['body'] == "") {
+								preg_match_all("@<h2>\s*Body\s*</h2>(.*)<h2>\s*References\s*</h2>@s",$handle,$body_match,PREG_PATTERN_ORDER);
+								$item['body'] = $body_match[1][0];
+							}
+						
+							if ($item['references'] == "") {
+								preg_match_all("%<h2>\s*References\s*</h2>(.*)\Z%s",$handle,$ref_match,PREG_PATTERN_ORDER);
+								$item['references'] = $ref_match[1][0];
+							}
+						
+							if ($item['topics'] == "") {
+								preg_match_all("%<h6>\s*Topics\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$topics_match,PREG_PATTERN_ORDER);
+								$item['topics'] = $topics_match[1][0];
+							}
+						
+							if ($item['sections'] == "") {
+								preg_match_all("%<h6>\s*Sections\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$sections_match,PREG_PATTERN_ORDER);
+								$item['sections'] = trim($sections_match[1][0]);
+							}
+						
+							if ($item['digital_object_id'] == "") {
+								preg_match_all("%<h6>\s*Digital Object ID\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$doi_match,PREG_PATTERN_ORDER);
+								$item['digital_object_id'] = trim($doi_match[1][0]);
+							}
 						}
 
 					}
@@ -121,10 +138,11 @@ class FeedsAJOParser extends FeedsParser {
 				case "png":
 				case "jpg":
 				case "jpeg":
+				//todo: figure_match needs consistent file thing
 					if ($path_parts['filename'] == 'medium_image' || $path_parts['filename'] == 'big_image' || $path_parts['filename'] == 'teaser_image') {
-						$image_path = drupal_get_path('module', 'ajo_test').$path_parts['filename'];
+						$image_path = drupal_get_path('module', 'ajo_test').'/'.$path_parts['filename'];
 						$item[$path_parts['filename']]['filepath'] = $image_path;
-						$image_xml = exif_custom_get_xmp($image_path);
+						$image_xml = $this->exif_custom_get_xmp($image_path);
 						$item[$path_parts['filename']]['caption'] = $image_xml['XMP:xmpmeta:rdf:description:description:alt:li'];
 					}
 					else if ($figure_match > 0) 
@@ -133,11 +151,9 @@ class FeedsAJOParser extends FeedsParser {
 						preg_match_all("%(figure)|(Figure)(.*)_%",$path_parts['filename'],$figure_index,PREG_PATTERN_ORDER);
 						$image_path = drupal_get_path('module', 'ajo_test').$path_parts['filename'];
 						$figure_array['filepath'] = $image_path;
-						$image_xml = exif_custom_get_xmp($image_path);
+						$image_xml = $this->exif_custom_get_xmp($image_path);
 						$figure_array['caption'] = $image_xml['XMP:xmpmeta:rdf:description:description:alt:li'];
-
 						$item['figures'][$figure_index] = $figure_array; 
-
 					}
 					else {
 						//I haven't the slightest idea as to how to handle this error. 
@@ -145,13 +161,13 @@ class FeedsAJOParser extends FeedsParser {
 
 				break;
 			}
-			$result->items[] = $item;
-		}
 
+		}
+		$result->items[] = $item;
 		return $result;
 	}
 
-	function exif_custom_get_xmp($image) {
+	public function exif_custom_get_xmp($image) {
 		$content = file_get_contents($image);
 		$xmp_data_start = strpos($content, '<x:xmpmeta');
 		$xmp_data_end = strpos($content, '</x:xmpmeta>');
@@ -171,7 +187,7 @@ class FeedsAJOParser extends FeedsParser {
 		return $field_data;
 	}
 	  
-	  function exif_custom_xml_recursion($obj, array &$fields, $name) {
+	function exif_custom_xml_recursion($obj, array &$fields, $name) {
 		$namespace = $obj->getDocNamespaces(TRUE);
 		$namespace[NULL] = NULL;
 	  
