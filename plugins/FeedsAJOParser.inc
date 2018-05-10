@@ -140,7 +140,7 @@ class FeedsAJOParser extends FeedsParser {
 				case "jpeg":
 				//todo: figure_match needs consistent file thing
 					if ($path_parts['filename'] == 'medium_image' || $path_parts['filename'] == 'big_image' || $path_parts['filename'] == 'teaser_image') {
-						$image_path = drupal_get_path('module', 'ajo_test').'/'.$path_parts['filename'];
+						$image_path = $file;
 						$item[$path_parts['filename']]['filepath'] = $image_path;
 						$image_xml = $this->exif_custom_get_xmp($image_path);
 						$item[$path_parts['filename']]['caption'] = $image_xml['XMP:xmpmeta:rdf:description:description:alt:li'];
@@ -167,27 +167,7 @@ class FeedsAJOParser extends FeedsParser {
 		return $result;
 	}
 
-	public function exif_custom_get_xmp($image) {
-		$content = file_get_contents($image);
-		$xmp_data_start = strpos($content, '<x:xmpmeta');
-		$xmp_data_end = strpos($content, '</x:xmpmeta>');
-		if ($xmp_data_start === FALSE || $xmp_data_end === FALSE) {
-		  return array();
-		}
-		$xmp_length = $xmp_data_end - $xmp_data_start;
-		$xmp_data = substr($content, $xmp_data_start, $xmp_length + 12);
-		unset($content);
-		$xmp = simplexml_load_string($xmp_data);
-		if ($xmp === FALSE) {
-		  return array();
-		}
-		$field_data = array();
-		exif_custom_xml_recursion($xmp, $field_data, 'XMP');
-	   
-		return $field_data;
-	}
-	  
-	function exif_custom_xml_recursion($obj, array &$fields, $name) {
+	public function exif_custom_xml_recursion($obj, array &$fields, $name) {
 		$namespace = $obj->getDocNamespaces(TRUE);
 		$namespace[NULL] = NULL;
 	  
@@ -234,7 +214,7 @@ class FeedsAJOParser extends FeedsParser {
 				if (!empty($ns)) {
 				  $childName = $ns . ':' . $childName;
 				}
-				$children[$childName][] = exif_custom_xml_recursion($child, $fields, $name);
+				$children[$childName][] = $this->exif_custom_xml_recursion($child, $fields, $name);
 			  }
 			}
 		  }
@@ -250,6 +230,28 @@ class FeedsAJOParser extends FeedsParser {
 		  'children' => $children,
 		);
 	}
+
+	public function exif_custom_get_xmp($image) {
+		$content = file_get_contents($image);
+		$xmp_data_start = strpos($content, '<x:xmpmeta');
+		$xmp_data_end = strpos($content, '</x:xmpmeta>');
+		if ($xmp_data_start === FALSE || $xmp_data_end === FALSE) {
+		  return array();
+		}
+		$xmp_length = $xmp_data_end - $xmp_data_start;
+		$xmp_data = substr($content, $xmp_data_start, $xmp_length + 12);
+		unset($content);
+		$xmp = simplexml_load_string($xmp_data);
+		if ($xmp === FALSE) {
+		  return array();
+		}
+		$field_data = array();
+		$this->exif_custom_xml_recursion($xmp, $field_data, 'XMP');
+	   
+		return $field_data;
+	}
+	  
+
 	
 
 }

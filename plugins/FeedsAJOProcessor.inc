@@ -39,32 +39,47 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $image_type_array = array('medium_image', 'big_image', 'teaser_image');
     foreach ($image_type_array as $image_type)
     {
-      $file_efq = new EntityFieldQuery();
-      $file_efq->entityCondition('entity_type', 'file')->propertyCondition('uri', $item['folder_path'].'/'.$image_type);
-      $file_efq_result = $file_efq->execute();
-      //todo: if there's no fid, how do we skip over this?
-      //todo: need file extension. This will come from item(files list). First we need to search for which ones to implement, and what their extensions are
-      //key is image_type and value is extension
-      var_dump($item['folder_path'].'/'.$image_type);
-      die;
-      $fid = 0;
-      var_dump($file_efq_result);
-      die;
-      if (count($file_efq_result)) {
-        $fid = array_pop($file_efq_result['file'])->fid;
+      if ($item[$image_type]) 
+      {
+        //todo: the URIs and managed_files are in the entity table as the original zip file. so how can we find the right one?
+        //$file_efq = new EntityFieldQuery();
+
+        $image_obj = file_save_data(file_get_contents($item[$image_type]['filepath']));
+        //$wrapper->field_photo->file->set($file);
+
+
+
+        /*$file_efq->entityCondition('entity_type', 'file')->propertyCondition('uri', $item[$image_type]['filepath']);
+        $file_efq_result = $file_efq->execute();
+    
+        $fid = 0;
+  
+        if (count($file_efq_result)) {
+          $fid = array_pop($file_efq_result['file'])->fid;
+        }
+        // Set both file and title separately. 
+        $image_obj = file_load($fid);*/
+  
+        //todo: test string concat
+        $fieldstring = "field_article_".$image_type;
+  
+        $ewrapper->$fieldstring->file = $image_obj;
+
+
+        //todo: unknown data property title?
+        //check on whether it's alt or something else
+        //$ewrapper->$fieldstring->title->set($item[$image_type]['caption']);
+        //$ewrapper->$fieldstring->alt = $item[$image_type]['caption'];
+
       }
-      // Set both file and title separately. 
-      $image_obj = file_load($fid);
+      
 
-      //todo: test string concat
-      $fieldstring = "field_article_".$image_type;
 
-      $ewrapper->$fieldstring->file = $image_obj;
-      $ewrapper->$fieldstring->title = $item[$image_type]['caption'];
+
 
     }
 
-    
+
     //Inside the article- all long text fields. Key Info = Take Home Points
     $ewrapper->field_article_key_info->set(array('value' => $item['take_home_points']));
     
