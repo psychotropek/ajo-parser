@@ -46,6 +46,12 @@ class FeedsAJOParser extends FeedsParser {
 						// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
 						$docconverterTemplate = "AJO test template";
+						if ($table_match > 0)
+						{
+							//todo: need something that won't strip table formatting?
+							$docconverterTemplate = "AJO test template";
+						}
+
 						$formData = array();
 						$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
 						$formData[] = [ 'name' => 'template', 'contents' => $docconverterTemplate];
@@ -71,6 +77,8 @@ class FeedsAJOParser extends FeedsParser {
 							preg_match_all("%^(.|\n)*<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
 							$table_array['above_table'] = trim($above_table[0][0]);
 							preg_match_all("%(<table>((.|\n*)*)</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
+							//var_dump($table_data);
+							//die;
 							$table_array['table_data'] = $table_data[0][0];
 							preg_match_all("%</table>(.|\n)*$%",$handle,$table_caption,PREG_PATTERN_ORDER);
 							$table_array['table_caption'] = trim($table_caption[0][0]);
@@ -93,11 +101,11 @@ class FeedsAJOParser extends FeedsParser {
 						
 							//todo: don't have yet
 							preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
-							$item['summary'] = $summary_match;
+							$item['summary'] = $summary_match[1][0];
 						
 							//todo: don't have yet
 							preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
-							$item['teaser'] = $teaser_match;
+							$item['teaser'] = $teaser_match[1][0];
 						
 							if ($item['take_home_points'] == "") {
 								preg_match_all("%<h2>\s*Take-Home Points\s*</h2>\s*(((?!<h)(.|\n))*)\s*%",$handle,$points_match,PREG_PATTERN_ORDER);

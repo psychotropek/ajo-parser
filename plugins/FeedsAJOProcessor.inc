@@ -29,8 +29,10 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $ewrapper->title->set($item['title']);
     $ewrapper->body->set(array('value' => $item['body']));
     //the abstract is contained in the summary field
-    $ewrapper->field_article_summary->set(array('value' => $item['summary']) );
+    //$ewrapper->field_article_summary->set(array('value' => $item['summary']) );
+
     $ewrapper->field_article_teaser->set(array('value' => $item['teaser']));
+    
     $ewrapper->field_article_doi->set($item['digital_object_id']);
    
     //n.b.Legacy authors is a rich text that contains author disclosure
@@ -41,30 +43,17 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     {
       if ($item[$image_type]) 
       {
-        //todo: the URIs and managed_files are in the entity table as the original zip file. so how can we find the right one?
-        //$file_efq = new EntityFieldQuery();
+        //todo: put it elsewhere, and not as a tmp file
+//file_save_data($xml,$xml_path.'/'.$object->nid.'.xml', FILE_EXISTS_REPLACE);
+//$path_parts = pathinfo($file);
+//$file_type = $path_parts['extension'];
 
-        $image_obj = file_save_data(file_get_contents($item[$image_type]['filepath']));
-        //$wrapper->field_photo->file->set($file);
-
-
-
-        /*$file_efq->entityCondition('entity_type', 'file')->propertyCondition('uri', $item[$image_type]['filepath']);
-        $file_efq_result = $file_efq->execute();
-    
-        $fid = 0;
-  
-        if (count($file_efq_result)) {
-          $fid = array_pop($file_efq_result['file'])->fid;
-        }
-        // Set both file and title separately. 
-        $image_obj = file_load($fid);*/
+        //$extension = $item[$image_type]['filepath'];
+        $image_obj = file_save_data(file_get_contents($item[$image_type]['filepath']),$item[$image_type]['filepath']);
   
         //todo: test string concat
         $fieldstring = "field_article_".$image_type;
-  
         $ewrapper->$fieldstring->file = $image_obj;
-
 
         //todo: unknown data property title?
         //check on whether it's alt or something else
@@ -73,10 +62,6 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
 
       }
       
-
-
-
-
     }
 
 
@@ -103,14 +88,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
       $figures_tables .= $table['above_table']." ".$table['table_data']." ".$table['table_caption']; 
       //"Table.".$key.":".      
     }
-
     $ewrapper->field_article_figures_tables->set(array('value' => $figures_tables));
-    
-    
-    
-    
-    //TODO: What is the multimedia going to be? How do they want to insert it?
-    //$ewrapper->field_article_multimedia->set("some code here that inserts multimedia");
     $ewrapper->field_references->set(array('value' => $item['references']));
   
   
@@ -121,7 +99,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $authors_array = explode('; ', $authors_string);
     $tid_array = array();
     foreach($authors_array as $author) {
-        $tid = custom_create_taxonomy_term($author, $vid);
+        $tid = $this->custom_create_taxonomy_term($author, $vid);
         $tid_array[] = $tid;
     }
     $ewrapper->field_article_authors->set($tid_array);
@@ -132,7 +110,7 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $topics_array = explode(', ', $topics_string);
     $tid_array = array();
     foreach($topics_array as $topic) {
-        $tid = custom_create_taxonomy_term($topic, $vid);
+        $tid = $this->custom_create_taxonomy_term($topic, $vid);
         $tid_array[] = $tid;
     }
     $ewrapper->field_article_topics->set($tid_array);
@@ -143,17 +121,16 @@ class FeedsAJOProcessor extends FeedsNodeProcessor {
     $sections_array = explode(', ', $sections_string);
     $tid_array = array();
     foreach($sections_array as $section) {
-        $tid = custom_create_taxonomy_term($section, $vid);
+        $tid = $this->custom_create_taxonomy_term($section, $vid);
         $tid_array[] = $tid;
     }
     $ewrapper->field_article_sections->set($tid_array);
-    
-    
-    
-    
-    
+
+
     // Now just save the wrapper and the entity
     $ewrapper->save();
+
+
   
 
       // Set message.
